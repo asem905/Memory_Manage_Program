@@ -1,33 +1,41 @@
-/*
-Author:Assem Samy
-File:app.c
-comment:contains main application
-*/
 #include "memory_manage.h"
-int main(){
-	/*just an example for you to test by*/
-	char *ptr=(char*)HmmAlloc(1024);
-	printf("block address is %p as we added size of metadata at start before block address by size of metadata it self which is %d\n",ptr,sizeof(blockheader_t));
-	printf("\n");
-	char *ptr2=(char*)HmmAlloc(1024);
-	printf("\n");
-	char *ptr3=(char*)HmmAlloc(1024);
-	printf("\n");
-	char *ptr5=(char*)HmmAlloc(125*1024);
-	printf("\n");
-	char *ptr4=(char*)HmmAlloc(2*1024);
-	printf("\n");
-	char *ptr6=(char*)HmmAlloc(3*1024);
-	printf("\n");
-	char *ptr7=(char*)HmmAlloc(4*1024);
-	printf("\n");
-	HmmFree(ptr7);
-	printf("\n");
-	HmmFree(ptr5);
-	printf("\n");
-	HmmFree(ptr6);
-	char *ptr8=(char*)HmmAlloc(1024);
-	return 0;
+
+int main(int argc, char *argv[]) {
+    /*example for testing as we randomly test by a random size to allocate then free*/
+    int nloops;
+    unsigned int seed;
+
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <seed> <nloops>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    seed = atoi(argv[1]);
+    nloops = atoi(argv[2]);
+
+    srand(seed);
+
+    void *allocated_blocks[nloops]; // Array to hold pointers to allocated blocks
+
+    // Allocate blocks of random sizes
+    for (int j = 0; j < nloops; j++) {
+        size_t size = rand() % MAX_ALLOC_SIZE + 1; // Random size between 1 and MAX_ALLOC_SIZE
+        void *ptr = HmmAlloc(size);
+        allocated_blocks[j] = ptr; // Store pointer in array
+        if (ptr) {
+            printf("Allocated %zu bytes at %p\n", size, ptr);
+        } else {
+            printf("Failed to allocate %zu bytes\n", size);
+        }
+    }
+
+    // Free allocated blocks from first block to last so simulated program break will be kept same till last block it will be decremented by size of last block and default subtracted size
+    for (int j = 0; j < nloops; j++) {
+        if (allocated_blocks[j]) {
+            HmmFree(allocated_blocks[j]);
+            printf("Freed memory at %p\n", allocated_blocks[j]);
+        }
+    }
+
+    return EXIT_SUCCESS;
 }
-
-
