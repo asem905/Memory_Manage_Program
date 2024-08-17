@@ -53,6 +53,12 @@ Frees a previously allocated block of memory.
 3. **Deallocation**: The deallocator searches for the block to free, marks it as free, and merges it with adjacent free blocks if necessary.
 4. **Simulated Program Break**: The simulated program break pointer helps track the end of allocated memory.
 
+## Used Command to Build and Run
+1.gcc -c app.c memory_manage.c memory_manage.h -o a.out
+2../a.out <put number as it will skeep each time generated numbers of it in memory> <put number of blocks you want>
+
+
+
 ## Example Usage
 
 Here is an example of how you might use these functions in a program:
