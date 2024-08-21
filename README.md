@@ -1,84 +1,127 @@
-# Memory Management Simulation
+Memory Management Functions Overview
+This document provides an overview of the memory management functions defined in memory_manage.c. The file contains implementations of four key functions: HmmAlloc, HmmFree, Hmmrealloc, and Hmmcalloc. Each function is designed to manage memory in a simulated heap environment.
 
-## Overview
+1. HmmAlloc
+Purpose:
+Allocates a block of memory of a specified size.
 
-This project provides a basic simulation of heap memory management using a custom allocator and deallocator. The code defines a simulated heap and manages memory allocation and deallocation using linked blocks. It includes basic memory management operations similar to those found in real-world systems, albeit in a simplified form.
+Functionality:
 
-## Files
+Input: size - The size of the memory block to allocate.
+Output: Pointer to the allocated memory block or NULL if allocation fails.
+Steps:
 
-- **memory_manage.c**: Contains the implementation of the memory management functions.
-- **memory_manage.h**: (Assumed to exist) Header file with declarations for the memory management functions and definitions for constants and structures.
+Adjust Size:
 
-## Purpose
+Adds space for the block header to the requested size.
+Initialization:
 
-The primary purpose of this code is to simulate a heap memory area where memory blocks can be allocated and freed. This simulation helps in understanding how memory allocation and deallocation work at a low level and is useful for educational purposes.
+If this is the first allocation, initializes the heap.
+Traversal:
 
-## Functions
+Iterates through the list of blocks to find a suitable free block.
+Block Allocation:
 
-### `HmmAlloc(size_t size)`
+Checks if the current block is large enough.
+Splits the block if there’s extra space after allocation.
+Updates the block's size and status.
+Updates the simulated program break if the new block extends beyond it.
+Return:
 
-Allocates a block of memory of at least the specified `size`. The size includes space for the memory block header. 
+Returns a pointer to the allocated memory, excluding the block header.
+Edge Cases:
 
-- **Parameters**: `size` - The size of the memory block to allocate.
-- **Returns**: A pointer to the allocated memory block, or `NULL` if no suitable block is available.
+Handles zero-size requests by returning an error message.
+Checks for heap overflow conditions.
 
-#### Detailed Explanation:
-
-1. **Adjust Size**: The requested `size` is increased by the size of the header to account for metadata.
-2. **Initialize Heap**: If this is the first allocation, the heap is initialized with a single large free block.
-3. **Find Suitable Block**: Traverse the list of memory blocks to find a free block that fits the requested size.
-4. **Split Block**: If the found block is larger than needed, it is split into two blocks.
-5. **Update Simulated Break**: Adjust the simulated program break pointer if the allocated block extends beyond the current break.
-6. **Return Pointer**: Return a pointer to the memory after the block header.
-
-### `HmmFree(void *ptr)`
-
+2. HmmFree
+Purpose:
 Frees a previously allocated block of memory.
 
-- **Parameters**: `ptr` - A pointer to the memory block to free.
-- **Returns**: Nothing.
+Functionality:
 
-#### Detailed Explanation:
+Input: ptr - Pointer to the memory block to free.
+Steps:
 
-1. **Error Checking**: If the pointer is `NULL`, an error message is printed, and the function returns.
-2. **Locate Block**: Calculate the block header pointer from the given pointer and find the corresponding block in the list.
-3. **Merge Blocks**: Merge the freed block with adjacent free blocks (if any) to avoid fragmentation.
-4. **Update Simulated Break**: Adjust the simulated program break pointer if the freed block was at the end of the heap.
-5. **Return**: The function returns after freeing the block and merging adjacent blocks.
+Validation:
 
-## How It Works
+Checks if the pointer is NULL.
+Block Identification:
 
-1. **Heap Initialization**: When the heap is first used, it is initialized with a single large block of free memory.
-2. **Allocation**: The allocator traverses the list of blocks, finds a suitable free block, and either allocates it directly or splits it if it is too large.
-3. **Deallocation**: The deallocator searches for the block to free, marks it as free, and merges it with adjacent free blocks if necessary.
-4. **Simulated Program Break**: The simulated program break pointer helps track the end of allocated memory.
+Determines the block to free by subtracting the size of the block header from the pointer.
+Block Deallocation:
 
-## Used Command to Build and Run
-1.gcc -c app.c memory_manage.c memory_manage.h -o a.out
-2../a.out <put number as it will skeep each time generated numbers of it in memory> <put number of blocks you want>
+Marks the block as free.
+Merges adjacent free blocks to avoid fragmentation.
+Updates the simulated program break if the freed block is at the end of the heap.
+Return:
 
+Returns after completing the deallocation process or logs an error if the block is not found.
+Edge Cases:
 
+Handles the case where the block is not found in the list.
+Properly updates pointers when merging adjacent free blocks.
 
-## Example Usage
+3. Hmmrealloc
+Purpose:
+Resizes an existing block of memory to a new size.
 
-Here is an example of how you might use these functions in a program:
+Functionality:
 
-```c
-#include "memory_manage.h"
-#include <stdio.h>
+Input: ptr - Pointer to the memory block to resize.
+Input: size - New size of the memory block.
+Steps:
 
-int main() {
-    // Allocate a block of 100 bytes
-    void *ptr = HmmAlloc(100);
-    if (ptr) {
-        printf("Allocated memory at %p\n", ptr);
-    } else {
-        printf("Allocation failed\n");
-    }
+Handle NULL Pointer:
 
-    // Free the allocated block
-    HmmFree(ptr);
-    printf("Memory freed\n");
+Allocates a new block if the pointer is NULL.
+Handle Zero Size:
 
-    return 0;
-}
+Frees the block if the new size is zero.
+Check Current Size:
+
+Determines if the new size is smaller or larger than the current size.
+Resize Block:
+
+If smaller, adjusts the block size and splits it if needed.
+If larger, allocates a new block, copies the data, and frees the old block.
+Return:
+
+Returns the pointer to the resized block or the new allocated block.
+Edge Cases:
+
+Handles cases where the new size is equal to, less than, or greater than the current block size.
+Ensures proper copying and freeing of memory.
+
+4. Hmmcalloc
+Purpose:
+Allocates and initializes a block of memory to zero.
+
+Functionality:
+
+Input: nmemb - Number of elements.
+Input: size - Size of each element.
+Steps:
+
+Overflow Check:
+
+Checks for integer overflow when calculating the total size.
+Initialization:
+
+Initializes the heap if it’s the first allocation.
+Memory Allocation:
+
+Allocates a block of memory large enough to hold the requested number of elements and initializes it to zero.
+Return:
+
+Returns a pointer to the allocated and zero-initialized memory.
+Edge Cases:
+
+Handles overflow and zero-size requests.
+Properly initializes the memory to zero.
+
+Common Concepts
+Heap Simulation: A static array (heap) is used to simulate memory allocation, with the simulated_program_break tracking the end of allocated space.
+Block Header: Each block of memory includes a blockheader_t structure to store metadata such as size and allocation status.
+Allocation Status: Blocks can be either allocated or unallocated, with the ability to merge adjacent free blocks to reduce fragmentation.
+These functions together provide a basic memory management system, handling dynamic memory allocation, deallocation, resizing, and zero-initialization within a simulated environment.
