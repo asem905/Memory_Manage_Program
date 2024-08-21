@@ -24,13 +24,21 @@ comment:contains all functions declarartions used in memory_manage.c and app.c
 #include <aio.h>
 #include <error.h>
 /----------------macros declarations-----------------/
-#define HEAP_SIZE 		1024 * 1024 * 1024 
-#define ALLOCATED_AREA		1
-#define UNALLOCATED_AREA	0
-#define DEFAULT_ADDED_SIZE	128 * 1024 
-#define DEFAULT_SUBTRACTED_SIZE	122 * 1024 
-#define MAX_ALLOC_SIZE 		(10*DEFAULT_ADDED_SIZE / 10)
-#define START_SIZE		1024
+#define HEAP_SIZE 				1024 * 1024 * 1024 
+#define ALLOCATED_AREA				1
+#define UNALLOCATED_AREA			0
+#define DEFAULT_ADDED_SIZE			128 * 1024 
+#define DEFAULT_SUBTRACTED_SIZE			12 * 1024 
+#define MAX_ALLOC_SIZE 				(10*DEFAULT_ADDED_SIZE / 10)
+#define START_SIZE				1024
+
+#define ALLOCATE_USING_MY_MALL0C 		1
+#define ALLOCATE_USING_SBRK			0
+#define METHOD_OF_ALLOCATION			ALLOCATE_USING_MY_MALL0C
+
+#define FREEING_USING_MY_FREE 			1
+#define FREEING_USING_SBRK			0
+#define METHOD_OF_FREEING			FREEING_USING_MY_FREE
 /-------------------data types------------------/
 typedef struct blockheader{
 	size_t block_size;
@@ -40,5 +48,7 @@ typedef struct blockheader{
 }blockheader_t;
 /-----------section contains functions declarations used inshell.c file------------/
 void *HmmAlloc(size_t size);
-void HmmFree(void *ptr);
+void  HmmFree(void *ptr);
+void *Hmmrealloc(void *ptr,size_t size);
+void *Hmmcalloc(size_t nmemb, size_t size);
 #endif
