@@ -1,41 +1,57 @@
 #include "memory_manage.h"
 
-int main(int argc, char *argv[]) {
-    /*example for testing as we randomly test by a random size to allocate then free*/
-    int nloops;
-    unsigned int seed;
+#define NUM_ALLOCS 100000
+#define MAX_SIZE 10240
+#define MAX_ITERATIONS 10000
 
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <seed> <nloops>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
-    seed = atoi(argv[1]);
-    nloops = atoi(argv[2]);
-
-    srand(seed);
-
-    void *allocated_blocks[nloops]; // Array to hold pointers to allocated blocks
-
-    // Allocate blocks of random sizes
-    for (int j = 0; j < nloops; j++) {
-        size_t size = rand() % MAX_ALLOC_SIZE + 1; // Random size between 1 and MAX_ALLOC_SIZE
-        void *ptr = HmmAlloc(size);
-        allocated_blocks[j] = ptr; // Store pointer in array
-        if (ptr) {
-            printf("Allocated %zu bytes at %p\n", size, ptr);
+void random_alloc_free_test() {
+    srand((unsigned int)time(NULL));
+    
+    void* pointers[NUM_ALLOCS] = {NULL};
+    int realloc_t=0;
+    int new_size=0;
+    for (int i = 0; i < MAX_ITERATIONS; ++i) {
+        int index = rand() % NUM_ALLOCS;
+        if (pointers[index] == NULL) {
+            // Allocate memory
+            size_t size = (size_t)(rand() % MAX_SIZE) + 1;
+            pointers[index] = HmmAlloc(size);
+            if (pointers[index] != NULL) {
+                printf("Allocated memory of size %zu at address %p\n", size, pointers[index]);
+                printf("do you want to reallocate any additional size press 1 if yes and 0 if no:\n");
+                scanf(" %i",&realloc_t);
+                if(1==realloc_t){
+                	printf("enter size you want new:\n");
+                	scanf("%i",&new_size);
+                	pointers[index]=Hmmrealloc(pointers[index],new_size);
+                
+                }else{
+                	printf("okay no reallocation\n");
+                }
+            } else {
+                fprintf(stderr, "Allocation failed for size %zu\n", size);
+            }
         } else {
-            printf("Failed to allocate %zu bytes\n", size);
+            // Free memory
+            printf("Freeing memory at address %p\n", pointers[index]);
+            HmmFree(pointers[index]);
+            pointers[index] = NULL;
         }
     }
-
-    // Free allocated blocks from first block to last so simulated program break will be kept same till last block it will be decremented by size of last block and default subtracted size
-    for (int j = 0; j < nloops; j++) {
-        if (allocated_blocks[j]) {
-            HmmFree(allocated_blocks[j]);
-            printf("Freed memory at %p\n", allocated_blocks[j]);
+    
+    // Free remaining allocated memory
+    for (int i = 0; i < NUM_ALLOCS; ++i) {
+        if (pointers[i] != NULL) {
+            printf("Freeing remaining memory at address %p\n", pointers[i]);
+            HmmFree(pointers[i]);
+            pointers[i] = NULL;
         }
     }
+}
 
-    return EXIT_SUCCESS;
+int main() {
+    printf("Starting random allocation and deallocation test...\n");
+    random_alloc_free_test();
+    printf("Test complete.\n");
+    return 0;
 }
