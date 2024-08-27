@@ -15,7 +15,7 @@ void random_alloc_free_test() {
         if (pointers[index] == NULL) {
             // Allocate memory
             size_t size = (size_t)(rand() % MAX_SIZE) + 1;
-            pointers[index] = HmmAlloc(size);
+            pointers[index] = malloc(size);
             if (pointers[index] != NULL) {
                 printf("Allocated memory of size %zu at address %p\n", size, pointers[index]);
                 printf("do you want to reallocate any additional size press 1 if yes and 0 if no:\n");
@@ -23,7 +23,7 @@ void random_alloc_free_test() {
                 if(1==realloc_t){
                 	printf("enter size you want new:\n");
                 	scanf("%i",&new_size);
-                	pointers[index]=Hmmrealloc(pointers[index],new_size);
+                	pointers[index]=realloc(pointers[index],new_size);
                 
                 }else{
                 	printf("okay no reallocation\n");
@@ -34,7 +34,7 @@ void random_alloc_free_test() {
         } else {
             // Free memory
             printf("Freeing memory at address %p\n", pointers[index]);
-            HmmFree(pointers[index]);
+            free(pointers[index]);
             pointers[index] = NULL;
         }
     }
@@ -43,7 +43,7 @@ void random_alloc_free_test() {
     for (int i = 0; i < NUM_ALLOCS; ++i) {
         if (pointers[i] != NULL) {
             printf("Freeing remaining memory at address %p\n", pointers[i]);
-            HmmFree(pointers[i]);
+            free(pointers[i]);
             pointers[i] = NULL;
         }
     }
