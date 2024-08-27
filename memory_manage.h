@@ -34,11 +34,15 @@ comment:contains all functions declarartions used in memory_manage.c and app.c
 
 #define ALLOCATE_USING_MY_MALL0C 		1
 #define ALLOCATE_USING_SBRK			0
-#define METHOD_OF_ALLOCATION			ALLOCATE_USING_MY_MALL0C
+#define METHOD_OF_ALLOCATION			ALLOCATE_USING_MY_MALL0C 
 
 #define FREEING_USING_MY_FREE 			1
 #define FREEING_USING_SBRK			0
-#define METHOD_OF_FREEING			FREEING_USING_MY_FREE
+#define METHOD_OF_FREEING			FREEING_USING_MY_FREE 
+
+#define ALIGN_SIZE 8
+#define align_size(size) (((size) + (ALIGN_SIZE - 1)) & ~(ALIGN_SIZE - 1))
+
 /-------------------data types------------------/
 typedef struct blockheader{
 	size_t block_size;
@@ -46,9 +50,11 @@ typedef struct blockheader{
 	struct blockheader *next_block;
 	struct blockheader *prev_block;
 }blockheader_t;
+
 /-----------section contains functions declarations used inshell.c file------------/
-void *HmmAlloc(size_t size);
-void  HmmFree(void *ptr);
-void *Hmmrealloc(void *ptr,size_t size);
-void *Hmmcalloc(size_t nmemb, size_t size);
+
+void *realloc(void *ptr,size_t size);
+void *calloc(size_t nmemb, size_t size);
+void *malloc(size_t size);
+void free(void *ptr) ;
 #endif
