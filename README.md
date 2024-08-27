@@ -18,7 +18,7 @@ This project provides a custom memory allocator implemented in C, demonstrating 
    - [Custom Allocation](#custom-allocation)
    - [System Call Using `sbrk`](#system-call-using-sbrk)
 3. [Usage](#usage)
-4. [How to implement](#How to implement)
+4. [How to implement on tour shell](#how-to-implement-on-your-shell)
 
 ---
 
