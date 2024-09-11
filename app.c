@@ -1,6 +1,6 @@
 #include "memory_manage.h"
 
-#define NUM_ALLOCS 100000
+#define NUM_ALLOCS 1000
 #define MAX_SIZE 10240
 #define MAX_ITERATIONS 10000
 
@@ -18,16 +18,17 @@ void random_alloc_free_test() {
             pointers[index] = malloc(size);
             if (pointers[index] != NULL) {
                 printf("Allocated memory of size %zu at address %p\n", size, pointers[index]);
-                printf("do you want to reallocate any additional size press 1 if yes and 0 if no:\n");
-                scanf(" %i",&realloc_t);
-                if(1==realloc_t){
-                	printf("enter size you want new:\n");
-                	scanf("%i",&new_size);
-                	pointers[index]=realloc(pointers[index],new_size);
+                /*here if you want to use reallocation part:
+                //printf("do you want to reallocate any additional size press 1 if yes and 0 if no:\n");
+                //scanf(" %i",&realloc_t);
+                //if(1==realloc_t){
+                	//printf("enter size you want new:\n");
+                	//scanf("%i",&new_size);
+                	//pointers[index]=realloc(pointers[index],new_size);
                 
-                }else{
-                	printf("okay no reallocation\n");
-                }
+                //}else{
+                	//printf("okay no reallocation\n");
+                //}*/
             } else {
                 fprintf(stderr, "Allocation failed for size %zu\n", size);
             }
