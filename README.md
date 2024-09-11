@@ -111,7 +111,8 @@ To use the custom memory allocator:
 1-as shared library:
  -gcc -FPIC -shared /pathoffile/libhmm.so memory_manage.c
  -LD_PRELOAD=/pathoffile/libhmm.so <command_you_want_to_run_withit>
-2-make your file be allocated in memory by this program:
+ 
+2-run any test program as that as remove app.c if you ant to run your program:
  -gcc app.c memory_manage.c memory_manage.h -o a.out
  -LD_PRELOAD=/pathoffile/libhmm.so ./a.out
 
