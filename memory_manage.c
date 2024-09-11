@@ -1,7 +1,7 @@
 /*
 Author:Assem Samy
 File:memory_manage.c
-comment:contains all functions definitions
+comment:contains all functions definitions used in memory managment program 
 */
 /-----------------includes section--------------/
 #include "memory_manage.h"
@@ -23,7 +23,7 @@ static void initialize_heap() {
     simulated_program_break = heap+START_SIZE ;
 }
 static void *HmmAlloc(size_t size) {
-#if METHOD_OF_ALLOCATION==ALLOCATE_USING_MY_MALL0C
+#if METHOD_OF_FREEING_ALLOCATING==FREEING_ALLOCATING_USING_MY_FREE_MALLOC 
     
 
     if (size == 0) {
@@ -93,103 +93,95 @@ static void *HmmAlloc(size_t size) {
     //printf("failed to allocate\n");
     // No suitable block found
     return NULL;
-#elif METHOD_OF_ALLOCATION==ALLOCATE_USING_SBRK//system call of kernel it self
-	if (size == 0) {
-        	size=78;
-    	}
+#elif METHOD_OF_FREEING_ALLOCATING==FREEING_ALLOCATINF_USING_SBRK //system call of kernel it self
+    if (size == 0) {
+        size = 48;
+    }
+    size += sizeof(blockheader_t); // Include space for the header
 
-    	size += sizeof(blockheader_t); // Include space for the header
+    if (heap_start == NULL) {
+        heap_start = sbrk(DEFAULT_ADDED_SIZE);
+        if (heap_start == (void *)-1) {
+            return NULL;
+        }
+        heap_end = (char *)heap_start + DEFAULT_ADDED_SIZE;
 
-    	// Check if the heap needs to be initialized
-    	if (heap_start == NULL) {
-        	// Allocate initial heap
-        	heap_start = sbrk(DEFAULT_ADDED_SIZE);
-        	if (heap_start == (void *)-1) {
-            	return NULL; // sbrk failed
-        	}
-        	heap_end = (char *)heap_start + DEFAULT_ADDED_SIZE;
+        blockheader_t *initial_block = (blockheader_t *)heap_start;
+        initial_block->block_size = DEFAULT_ADDED_SIZE;
+        initial_block->allocation_status = UNALLOCATED_AREA;
+        initial_block->next_block = NULL;
+        initial_block->prev_block = NULL;
+        real_list = initial_block;
+    }
 
-        	// Initialize the free list with one large block
-        	blockheader_t *initial_block = (blockheader_t *)heap_start;
-        	initial_block->block_size = DEFAULT_ADDED_SIZE;
-        	initial_block->allocation_status = UNALLOCATED_AREA;
-        	initial_block->next_block = NULL;
-        	initial_block->prev_block = NULL;
-        	real_list = initial_block;
-    	}
+    blockheader_t *current = real_list;
+    blockheader_t *prev = NULL;
 
-    	// Search for a suitable block
-    	blockheader_t *current = real_list;
-    	blockheader_t *prev = NULL;
+    while (current) {
+        if (current->allocation_status == UNALLOCATED_AREA && current->block_size >= size) {
+            if ((current->block_size > size) && (current->block_size - size > sizeof(blockheader_t))) {
+                blockheader_t *next_block = (blockheader_t *)((char *)current + size);
+                next_block->block_size = current->block_size - size;
+                next_block->allocation_status = UNALLOCATED_AREA;
+                next_block->next_block = current->next_block;
+                next_block->prev_block = current;
 
-    	while (current != NULL) {
-        	if (current->allocation_status == UNALLOCATED_AREA && current->block_size >= size) {
-            		// Split the block if there is enough space left
-            		if ((current->block_size > size) && ((current->block_size - size) > sizeof(blockheader_t))) {
-                		blockheader_t *next_block = (blockheader_t *)((char *)current + size);
-                		next_block->block_size = current->block_size - size;
-                		next_block->allocation_status = UNALLOCATED_AREA;
-                		next_block->next_block = current->next_block;
-                		next_block->prev_block = current;
+                current->block_size = size;
+                current->allocation_status = ALLOCATED_AREA;
+                current->next_block = next_block;
+                if (next_block->next_block) {
+                    next_block->next_block->prev_block = next_block;
+                }
+            } else {
+                current->allocation_status = ALLOCATED_AREA;
+            }
 
-                		current->block_size = size;
-                		current->allocation_status = ALLOCATED_AREA;
-                		current->next_block = next_block;
-                		if (next_block->next_block) {
-                   			 next_block->next_block->prev_block = next_block;
-                		}
-            		} else {
-                		current->allocation_status = ALLOCATED_AREA;
-            		}
+            // Remove the block from the free list
+            if (prev && prev->allocation_status == UNALLOCATED_AREA) {
+                prev->next_block = current->next_block;
+                if (current->next_block) {
+                    current->next_block->prev_block = prev;
+                }
+            } else {
+                real_list = current->next_block;
+                if (real_list) {
+                    real_list->prev_block = NULL;
+                }
+            }
+            return (char *)current + sizeof(blockheader_t);
+        }
+        prev = current;
+        current = current->next_block;
+    }
 
-            		// Remove the block from the free list
-            		if (prev) {
-                		prev->next_block = current->next_block;
-                		if (current->next_block) {
-                    			current->next_block->prev_block = prev;
-                		}
-            		} else {
-                		real_list = current->next_block;
-                		if (real_list) {
-                    			real_list->prev_block = NULL;
-                		}
-            		}
+    // No suitable block found, expand the heap
+    size_t expand_size = (size > DEFAULT_ADDED_SIZE) ? size + DEFAULT_ADDED_SIZE : DEFAULT_ADDED_SIZE;
+    void *new_heap = sbrk(expand_size);
+    if (new_heap == (void *)-1) {
+        return NULL; // sbrk failed
+    }
 
-            		return (char *)current + sizeof(blockheader_t);
-        	}
+    heap_end = (char *)new_heap + expand_size;
 
-        	prev = current;
-        	current = current->next_block;
-    	}
+    // Initialize the new block
+    blockheader_t *new_block = (blockheader_t *)new_heap;
+    new_block->block_size = expand_size;
+    new_block->allocation_status = UNALLOCATED_AREA;
+    new_block->next_block = real_list;
+    new_block->prev_block = NULL;
+    if (real_list) {
+        real_list->prev_block = new_block;
+    }
+    real_list = new_block;
 
-    	// No suitable block found, expand the heap
-    	size_t expand_size = (size > DEFAULT_ADDED_SIZE) ? size+DEFAULT_ADDED_SIZE : DEFAULT_ADDED_SIZE;
-    	void *new_heap = sbrk(expand_size);
-    	if (new_heap == (void *)-1) {
-        	return NULL; // sbrk failed
-    	}
-
-    	heap_end = (char *)new_heap + expand_size;
-
-    	// Initialize the new block
-    	blockheader_t *new_block = (blockheader_t *)new_heap;
-    	new_block->block_size = expand_size;
-    	new_block->allocation_status = UNALLOCATED_AREA;
-    	new_block->next_block = real_list;
-    	new_block->prev_block = NULL;
-    	if (real_list) {
-        	real_list->prev_block = new_block;
-    	}
-    	real_list = new_block;
-
-    	return (char *)new_block + sizeof(blockheader_t);
+    return (char *)new_block + sizeof(blockheader_t);
 #else
 //printf("invalid method of allocation\n");
 #endif
 }
 
 static void HmmFree(void *ptr){
-#if METHOD_OF_FREEING == FREEING_USING_MY_FREE
+#if METHOD_OF_FREEING_ALLOCATING==FREEING_ALLOCATING_USING_MY_FREE_MALLOC
 
 	if (ptr == NULL) {
         	//printf("Error: Attempt to free a NULL pointer\n");
@@ -261,64 +253,67 @@ static void HmmFree(void *ptr){
 		//printf("not found\n");
 	}
 	
-#elif METHOD_OF_FREEING == FREEING_USING_SBRK//system call of kernel it self
-	if (ptr == NULL) {
-        	return;
-    	}
+#elif METHOD_OF_FREEING_ALLOCATING==FREEING_ALLOCATINF_USING_SBRK //system call of kernel it self
+    if (ptr == NULL) {
+        return; // No action needed for NULL pointer
+    }
 
-    	blockheader_t *block_to_free = (blockheader_t *)((char *)ptr - sizeof(blockheader_t));
-    	blockheader_t *real_current = real_list;
-    	blockheader_t *real_prev = NULL;
+    // Calculate the header address from the pointer
+    blockheader_t *block_to_free = (blockheader_t *)((char *)ptr - sizeof(blockheader_t));
 
-    	// Ensure the block to free is valid
-    	if (block_to_free->allocation_status != ALLOCATED_AREA) {
-        	return; // Double free or invalid free
-    	}
+    // Check if the block to free is valid
+    if (block_to_free->allocation_status != ALLOCATED_AREA) {
+        return; // Double free or invalid block
+    }
 
-    	// Find the block to free in the list
-    	while (real_current != NULL) {
-        	if (real_current == block_to_free) {
-            		// We found the block to free
-            		break;
-       	 	}
-        	real_prev = real_current;
-        	real_current = real_current->next_block;
-   	 }
+    // Search for the block in the list
+    blockheader_t *real_current = real_list;
+    blockheader_t *real_prev = NULL;
 
-    	if (real_current == NULL) {
-        	// Block to free was not found in the list
-       	 	return;
-    	}
+    while (real_current != NULL) {
+        if (real_current == block_to_free) {
+            break; // Block found
+        }
+        real_prev = real_current;
+        real_current = real_current->next_block;
+    }
 
-    	// Mark the block as free
-    	real_current->allocation_status = UNALLOCATED_AREA;
+    if (real_current == NULL) {
+        return; // Block to free was not found in the list
+    }
 
-    	// Coalesce adjacent free blocks
-    	if (real_current->prev_block && real_current->prev_block->allocation_status == UNALLOCATED_AREA) {
-        	// Merge with previous block
-        	real_current->prev_block->block_size += real_current->block_size;
-        	real_current->prev_block->next_block = real_current->next_block;
-        	if (real_current->next_block) {
-            		real_current->next_block->prev_block = real_current->prev_block;
-        	}
-        	real_current = real_current->prev_block; // Move to the merged block
-    	}
+    // Mark the block as free
+    real_current->allocation_status = UNALLOCATED_AREA;
 
-    	if (real_current->next_block && real_current->next_block->allocation_status == UNALLOCATED_AREA) {
-        	// Merge with next block
-        	real_current->block_size += real_current->next_block->block_size;
-        	real_current->next_block = real_current->next_block->next_block;
-        	if (real_current->next_block) {
-           	 	real_current->next_block->prev_block = real_current;
-        	}
-    	}
+    // Merge with previous block if it's free
+    if (real_current->prev_block != NULL && real_current->prev_block->allocation_status == UNALLOCATED_AREA) {
+        // Merge current block with previous block
+        real_current->prev_block->block_size += real_current->block_size;
+        real_current->prev_block->next_block = real_current->next_block;
+        if (real_current->next_block != NULL) {
+            real_current->next_block->prev_block = real_current->prev_block;
+        }
+        real_current = real_current->prev_block; // Move to the merged block
+    }
 
-    	// Check if we should shrink the heap
-    	if ((char *)real_current + real_current->block_size >= (char *)real_program_break) {
-        	// We can shrink the heap
-        	sbrk(-(real_current->block_size + DEFAULT_SUBTRACTED_SIZE)); // Adjust the heap size
-        	real_program_break = (char *)real_current; // Update program break
-    	}
+    // Merge with next block if it's free
+    if (real_current->next_block != NULL && real_current->next_block->allocation_status == UNALLOCATED_AREA) {
+        // Merge current block with next block
+        real_current->block_size += real_current->next_block->block_size;
+        real_current->next_block = real_current->next_block->next_block;
+        if (real_current->next_block != NULL) {
+            real_current->next_block->prev_block = real_current;
+        }
+    }
+
+    // Check if we should shrink the heap
+    // Note: Ensure real_program_break is properly managed and initialized
+    if ((char *)real_current + real_current->block_size >= (char *)real_program_break) {
+        // Shrink the heap
+        sbrk(-(real_current->block_size )); // Adjust the heap size
+        real_program_break = (char *)real_current; // Update program break
+    }
+
 #else
 //printf("invalid method of allocation\n");
 #endif
@@ -403,7 +398,7 @@ void *realloc(void *ptr, size_t size) {
 }
 
 
-void *calloc(size_t nmemb, size_t size) {
+void* calloc(size_t nmemb, size_t size) {
 #if METHOD_OF_ALLOCATION==ALLOCATE_USING_MY_MALL0C
     if (nmemb != 0 && size > ULONG_MAX / nmemb) {//ULONG_MAX is number used to determine maximum number allowed for elements' multiplied by thier size 
         //printf("Error: Integer overflow in calloc\n");
@@ -582,4 +577,3 @@ void *calloc(size_t nmemb, size_t size) {
 //printf("invalid method of allocation\n");
 #endif
 }
-
