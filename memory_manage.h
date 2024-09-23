@@ -35,7 +35,7 @@ comment:contains all functions declarartions used in memory_manage.c and app.c
 
 #define FREEING_ALLOCATING_USING_MY_FREE_MALLOC 1
 #define FREEING_ALLOCATINF_USING_SBRK		0
-#define METHOD_OF_FREEING_ALLOCATING		FREEING_ALLOCATING_USING_SBRK
+#define METHOD_OF_FREEING_ALLOCATING		FREEING_ALLOCATING_USING_MY_FREE_MALLOC
 
 #define ALIGN_SIZE 8
 #define align_size(size) (((size) + (ALIGN_SIZE - 1)) & ~(ALIGN_SIZE - 1)) //just to allign to 8 bytes size to ease access of it in memry
